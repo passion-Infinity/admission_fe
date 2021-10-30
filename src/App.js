@@ -3,10 +3,12 @@ import {StyleSheet} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import RootStackScreen from './navigations/RootStack';
-import HomeScreen from './screens/HomeScreen';
+import BottomTab from './navigations/BottomTab';
+import AreaScreen from './screens/AreaScreen';
 import {AuthContext} from './components/context';
 import SplashScreen from './screens/SplashScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import SchoolDetailsScreen from './screens/SchoolDetailsScreen';
 
 // Global variable
 const Stack = createNativeStackNavigator();
@@ -106,10 +108,24 @@ export default function App() {
     <AuthContext.Provider value={authContext}>
       <NavigationContainer>
         {loginState.userToken !== null ? (
-          <Stack.Navigator initialRouteName="Splash">
+          <Stack.Navigator initialRouteName="BottomTab">
             <Stack.Screen
-              name="Home"
-              component={HomeScreen}
+              name="BottomTab"
+              component={BottomTab}
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="Area"
+              component={AreaScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="School"
+              component={SchoolDetailsScreen}
               options={{
                 headerShown: false,
               }}
