@@ -1,20 +1,41 @@
-import React, {useContext} from 'react';
+import React, {useContext, useState, useEffect} from 'react';
 import {StyleSheet, View, Text, Image, TouchableOpacity} from 'react-native';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import {AuthContext} from '../components/context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import userService from '../../services/UserService';
 
-export default function ProfileScreen({navigation}) {
+export default function ProfileScreen({navigation, route}) {
   const {LogOut} = useContext(AuthContext);
+  const [user, setUser] = useState();
   const onPress = () => {
     navigation.navigate('UpdateProfile');
   };
+
+  const loading = route && route.params ? route.params.loading : '';
+
+  useEffect(() => {
+    const getUser = async () => {
+      const username = await AsyncStorage.getItem('username');
+      if (username) {
+        const user = await userService.GetUser(username);
+        if (user && user.fullname) {
+          console.log(user.fullname);
+          setUser(user.fullname);
+        } else {
+          setUser(username);
+        }
+      }
+    };
+    getUser();
+  }, [loading]);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.header_avarta}>
           <Image
-            source={require('../../assets/images/google.png')}
+            source={require('../../assets/images/student.png')}
             resizeMode="contain"
             style={{
               width: '80%',
@@ -24,7 +45,7 @@ export default function ProfileScreen({navigation}) {
           />
         </View>
         <View style={styles.header_info}>
-          <Text style={styles.header_name}>Nguyen Lam Cong Danh</Text>
+          <Text style={styles.header_name}>{user}</Text>
         </View>
       </View>
       <View style={styles.body}>
@@ -92,6 +113,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#fff',
     fontWeight: '600',
+    textTransform: 'uppercase',
   },
   header_avarta: {
     width: '25%',

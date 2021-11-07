@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   TextInput,
   Keyboard,
+  ScrollView,
 } from 'react-native';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import Feather from 'react-native-vector-icons/Feather';
@@ -36,6 +37,18 @@ export default function UpdateProfileScreen({navigation}) {
   };
   const onBlur2 = () => {
     setFocus2(false);
+  };
+
+  const [fullname, setFullname] = useState('');
+
+  const onChangeTextFullname = val => {
+    setFullname(val);
+  };
+
+  const [isChangePass, setIsChangePass] = useState(false);
+
+  const isChangePassFunc = () => {
+    setIsChangePass(!isChangePass);
   };
 
   // data to Register
@@ -143,24 +156,38 @@ export default function UpdateProfileScreen({navigation}) {
   };
 
   const updateHandler = async (password, confirm) => {
-    if (!password || !confirm || password.length < 8 || confirm.length < 8) {
-      alert('Thông tin cập nhật không đúng');
-      return;
+    let payload;
+
+    if (isChangePass) {
+      if (!password || !confirm || password.length < 8 || confirm.length < 8) {
+        alert('Thông tin cập nhật không đúng');
+        return;
+      }
+
+      if (confirm !== password) {
+        alert('Mặt khẩu xác nhận không đúng');
+        return;
+      }
     }
 
-    if (confirm !== password) {
-      alert('Mặt khẩu xác nhận không đúng');
-      return;
+    if (isChangePass) {
+      payload = {
+        fullname,
+        password,
+      };
+    } else {
+      payload = {
+        fullname,
+      };
     }
 
-    const payload = {
-      password,
-    };
+    console.log(payload);
 
     const response = await userService.UpdateUser(user.username, payload);
 
     if (response && response.success) {
       alert('Cập nhật tài khoản thành công');
+      navigation.navigate('Profile', {loading: fullname});
     } else {
       alert('Thông tin cập nhật không đúng');
     }
@@ -185,7 +212,7 @@ export default function UpdateProfileScreen({navigation}) {
 
   return (
     <TouchableWithoutFeedback onPress={onPress}>
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} activeOpacity={0.4}>
             <FontAwesome5 name="arrow-left" color="#fff" size={20} />
@@ -197,6 +224,9 @@ export default function UpdateProfileScreen({navigation}) {
         </View>
         <View style={styles.body}>
           <View style={styles.form}>
+            <View style={styles.form_label}>
+              <Text style={styles.form_label_text}>Tên đăng nhập</Text>
+            </View>
             <View style={[styles.form_item]}>
               <FontAwesome5 name="user" color="#c4c9d1" size={20} />
               <TextInput
@@ -211,77 +241,108 @@ export default function UpdateProfileScreen({navigation}) {
               ) : null} */}
             </View>
             <View style={styles.form_error}></View>
-            <View
-              style={[
-                styles.form_item,
-                focus1 ? {borderColor: '#bda50d'} : '',
-              ]}>
-              <FontAwesome5 name="lock" color="#c4c9d1" size={20} />
+            <View style={styles.form_label}>
+              <Text style={styles.form_label_text}>Họ tên</Text>
+            </View>
+            <View style={[styles.form_item]}>
+              <FontAwesome5 name="user" color="#c4c9d1" size={20} />
               <TextInput
                 style={styles.form_item_input}
-                placeholder="Mặt khẩu mới"
+                placeholder={user ? user.fullname : ''}
                 placeholderTextColor="#fff"
                 autoCapitalize="none"
-                onChangeText={val => handlePassword(val)}
-                onEndEditing={e => handleValidPassword(e.nativeEvent.text)}
-                onFocus={onFocus1}
-                onBlur={onBlur1}
-                secureTextEntry={data.sercureTextEntry}
+                onEndEditing={e => onChangeTextFullname(e.nativeEvent.text)}
               />
-              <TouchableOpacity onPress={updateSercureTextInput}>
-                {data.sercureTextEntry ? (
-                  <Feather name="eye-off" color="#c4c9d1" size={20} />
-                ) : (
-                  <Feather name="eye" color="#c4c9d1" size={20} />
-                )}
-              </TouchableOpacity>
             </View>
-            <View style={styles.form_error}>
-              {data.isValidPassword ? null : (
-                <Text style={styles.form_error_text}>
-                  Mặt khẩu phải từ 8 ký từ trở lên
-                </Text>
-              )}
-            </View>
-            <View
-              style={[
-                styles.form_item,
-                focus2 ? {borderColor: '#bda50d'} : '',
-              ]}>
-              <FontAwesome5 name="lock" color="#c4c9d1" size={20} />
-              <TextInput
-                style={styles.form_item_input}
-                placeholder="Nhập lại mặt khẩu"
-                placeholderTextColor="#fff"
-                autoCapitalize="none"
-                onChangeText={val => handleConfirmPassword(val)}
-                onEndEditing={e =>
-                  handleValidConfirmPassword(e.nativeEvent.text)
-                }
-                onFocus={onFocus2}
-                onBlur={onBlur2}
-                secureTextEntry={data.sercureTextEntryConfirm}
-              />
-              <TouchableOpacity onPress={updateConfirmSercureTextInput}>
-                {data.sercureTextEntryConfirm ? (
-                  <Feather name="eye-off" color="#c4c9d1" size={20} />
-                ) : (
-                  <Feather name="eye" color="#c4c9d1" size={20} />
-                )}
-              </TouchableOpacity>
-            </View>
-            <View style={styles.form_error}>
-              {data.isValidCofirmPassword ? null : (
-                <Text style={styles.form_error_text}>
-                  Mặt khẩu phải từ 8 ký từ trở lên
-                </Text>
-              )}
-              {data.isMatchedPassword ? null : (
-                <Text style={styles.form_error_text}>
-                  Mặt khẩu xác nhận không đúng
-                </Text>
-              )}
-            </View>
+            <View style={styles.form_error}></View>
+            <TouchableOpacity
+              onPress={isChangePassFunc}
+              style={styles.changePass}>
+              <Text style={styles.changePass_text}>
+                {isChangePass ? 'Ẩn đổi mặt khẩu' : 'Đổi mặt khẩu'}
+              </Text>
+            </TouchableOpacity>
+            {isChangePass && (
+              <View>
+                <View style={styles.form_label1}>
+                  <Text style={styles.form_label_text}>Mặt khẩu</Text>
+                </View>
+                <View
+                  style={[
+                    styles.form_item,
+                    focus1 ? {borderColor: '#bda50d'} : '',
+                  ]}>
+                  <FontAwesome5 name="lock" color="#c4c9d1" size={20} />
+                  <TextInput
+                    style={styles.form_item_input}
+                    placeholder="Mặt khẩu mới"
+                    placeholderTextColor="#fff"
+                    autoCapitalize="none"
+                    onChangeText={val => handlePassword(val)}
+                    onEndEditing={e => handleValidPassword(e.nativeEvent.text)}
+                    onFocus={onFocus1}
+                    onBlur={onBlur1}
+                    secureTextEntry={data.sercureTextEntry}
+                  />
+                  <TouchableOpacity onPress={updateSercureTextInput}>
+                    {data.sercureTextEntry ? (
+                      <Feather name="eye-off" color="#c4c9d1" size={20} />
+                    ) : (
+                      <Feather name="eye" color="#c4c9d1" size={20} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.form_error}>
+                  {data.isValidPassword ? null : (
+                    <Text style={styles.form_error_text}>
+                      Mặt khẩu phải từ 8 ký từ trở lên
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.form_label1}>
+                  <Text style={styles.form_label_text}>Xác nhận mặt khẩu</Text>
+                </View>
+                <View
+                  style={[
+                    styles.form_item,
+                    focus2 ? {borderColor: '#bda50d'} : '',
+                  ]}>
+                  <FontAwesome5 name="lock" color="#c4c9d1" size={20} />
+                  <TextInput
+                    style={styles.form_item_input}
+                    placeholder="Nhập lại mặt khẩu"
+                    placeholderTextColor="#fff"
+                    autoCapitalize="none"
+                    onChangeText={val => handleConfirmPassword(val)}
+                    onEndEditing={e =>
+                      handleValidConfirmPassword(e.nativeEvent.text)
+                    }
+                    onFocus={onFocus2}
+                    onBlur={onBlur2}
+                    secureTextEntry={data.sercureTextEntryConfirm}
+                  />
+                  <TouchableOpacity onPress={updateConfirmSercureTextInput}>
+                    {data.sercureTextEntryConfirm ? (
+                      <Feather name="eye-off" color="#c4c9d1" size={20} />
+                    ) : (
+                      <Feather name="eye" color="#c4c9d1" size={20} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.form_error}>
+                  {data.isValidCofirmPassword ? null : (
+                    <Text style={styles.form_error_text}>
+                      Mặt khẩu phải từ 8 ký từ trở lên
+                    </Text>
+                  )}
+                  {data.isMatchedPassword ? null : (
+                    <Text style={styles.form_error_text}>
+                      Mặt khẩu xác nhận không đúng
+                    </Text>
+                  )}
+                </View>
+              </View>
+            )}
           </View>
           <View style={styles.control}>
             <TouchableOpacity
@@ -292,7 +353,7 @@ export default function UpdateProfileScreen({navigation}) {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 }
@@ -306,7 +367,7 @@ const styles = StyleSheet.create({
   },
   header: {
     width: '100%',
-    height: 200,
+    height: 150,
     justifyContent: 'space-evenly',
     paddingLeft: 10,
   },
@@ -318,7 +379,7 @@ const styles = StyleSheet.create({
   },
   body: {
     width: '100%',
-    marginTop: 20,
+    marginTop: 10,
   },
   form: {
     width: '100%',
@@ -350,7 +411,7 @@ const styles = StyleSheet.create({
   },
   control: {
     width: '100%',
-    marginTop: 60,
+    marginTop: 30,
     alignItems: 'center',
   },
   button_wrapper: {
@@ -385,5 +446,31 @@ const styles = StyleSheet.create({
   },
   button_google_text: {
     color: '#000',
+  },
+  form_label: {
+    position: 'relative',
+    width: 200,
+    left: -80,
+    marginBottom: 6,
+  },
+  form_label_text: {
+    color: '#777',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  form_label1: {
+    position: 'relative',
+    width: 200,
+    left: -15,
+    marginBottom: 6,
+  },
+  changePass: {
+    width: '100%',
+    marginBottom: 25,
+  },
+  changePass_text: {
+    color: '#fff',
+    fontSize: 16,
+    textDecorationLine: 'underline',
   },
 });
