@@ -9,6 +9,8 @@ import {AuthContext} from './components/context';
 import SplashScreen from './screens/SplashScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SchoolDetailsScreen from './screens/SchoolDetailsScreen';
+import userService from '../services/UserService';
+import UpdateProfileScreen from './screens/UpdateUserProfile';
 
 // Global variable
 const Stack = createNativeStackNavigator();
@@ -56,25 +58,17 @@ export default function App() {
 
   const authContext = useMemo(
     () => ({
-      LogIn: async (username, password) => {
-        let userToken = null;
-        if (!username || !password) {
-          alert('Thông tin đăng nhập không đúng');
-          return;
+      LogIn: async (username, token) => {
+        if (token) {
+          await AsyncStorage.setItem('userToken', token);
+          await AsyncStorage.setItem('username', username);
+          dispatch({type: 'LOGIN', id: username, token: token});
         }
-        if (username === 'danhnlc' && password === '123456789') {
-          userToken = 'abcdefgh';
-          try {
-            await AsyncStorage.setItem('userToken', userToken);
-          } catch (error) {
-            console.log(error);
-          }
-        }
-        dispatch({type: 'LOGIN', id: username, token: userToken});
       },
       LogOut: async () => {
         try {
           await AsyncStorage.removeItem('userToken');
+          await AsyncStorage.removeItem('username');
         } catch (error) {
           console.log(error);
         }
@@ -126,6 +120,13 @@ export default function App() {
             <Stack.Screen
               name="School"
               component={SchoolDetailsScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="UpdateProfile"
+              component={UpdateProfileScreen}
               options={{
                 headerShown: false,
               }}

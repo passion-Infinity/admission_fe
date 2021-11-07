@@ -11,13 +11,13 @@ import {
 
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
-export default function Subject({data}) {
+export default function Subject({data, index}) {
   const [show, setShow] = useState(false);
   const openPopup = () => {
     setShow(true);
   };
   return (
-    <View>
+    <View key={index}>
       <Modal
         animationType={'fade'}
         transparent

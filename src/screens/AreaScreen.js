@@ -15,21 +15,22 @@ import schoolService from '../../services/SchoolService';
 
 export default function AreaScreen({navigation, route}) {
   const [data, setData] = useState([]);
+  const [search, setSearch] = useState('');
   const areaName = route.params.areaName;
-  console.log(route.params);
+
   useEffect(() => {
     const getListSchool = async () => {
       try {
-        const params = {area: route.params.area};
+        const params = {area: route.params.area, name: search};
         const response = await schoolService.getAll(params);
         setData(response.data);
       } catch (error) {
         console.log('Failed to get school list: ', error);
       }
     };
-
     getListSchool();
-  }, []);
+  }, [search]);
+
   const renderData = data => {
     return (
       <School
@@ -44,8 +45,14 @@ export default function AreaScreen({navigation, route}) {
     navigation.goBack();
   };
 
+  const TextInputChange = val => {
+    setSearch(val);
+  };
+
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <TouchableWithoutFeedback
+      onPress={() => Keyboard.dismiss()}
+      accessible={false}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
@@ -61,8 +68,9 @@ export default function AreaScreen({navigation, route}) {
             <View style={styles.search}>
               <TextInput
                 style={styles.search_input}
-                placeholder="Nhập tên trường, tên ngành..."
+                placeholder="Nhập tên trường"
                 placeholderTextColor="#666"
+                onChangeText={val => TextInputChange(val)}
               />
               <FontAwesome5
                 style={styles.search_icon}

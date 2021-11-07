@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import Feather from 'react-native-vector-icons/Feather';
+import userService from '../../services/UserService';
 
 export default function RegisterScreen({navigation}) {
   const onPress = () => {
@@ -36,10 +37,10 @@ export default function RegisterScreen({navigation}) {
     setFocus1(false);
   };
   const onFocus2 = () => {
-    setFocus1(true);
+    setFocus2(true);
   };
   const onBlur2 = () => {
-    setFocus1(false);
+    setFocus2(false);
   };
 
   // data to Register
@@ -54,6 +55,7 @@ export default function RegisterScreen({navigation}) {
     isValidPassword: true,
     isValidCofirmPassword: true,
     isMatchedPassword: true,
+    isExistedUser: false,
   });
 
   const textInputChange = val => {
@@ -63,6 +65,7 @@ export default function RegisterScreen({navigation}) {
         username: val,
         check_textInputChange: true,
         isValidUser: true,
+        isExistedUser: false,
       });
     } else {
       setData({
@@ -70,6 +73,7 @@ export default function RegisterScreen({navigation}) {
         username: val,
         check_textInputChange: false,
         isValidUser: false,
+        isExistedUser: false,
       });
     }
   };
@@ -166,6 +170,48 @@ export default function RegisterScreen({navigation}) {
     }
   };
 
+  const registerHandler = async (username, password, confirm) => {
+    if (
+      !username ||
+      !password ||
+      !confirm ||
+      username.length < 6 ||
+      password.length < 8 ||
+      confirm.length < 8
+    ) {
+      alert('Thông tin đăng nhập không đúng');
+      return;
+    }
+
+    if (confirm !== password) {
+      alert('Mặt khẩu xác nhận không đúng');
+      return;
+    }
+
+    const payload = {
+      username,
+      fullname: '',
+      password,
+    };
+
+    console.log(payload);
+
+    const response = await userService.Register(payload);
+
+    console.log(response);
+
+    if (response && response.success) {
+      alert('Đăng ký tài khoản thành công');
+      navigation.replace('Login');
+    } else {
+      setData({
+        ...data,
+        isExistedUser: true,
+      });
+      alert('Tên đăng nhập đã tồn tại');
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={onPress}>
       <View style={styles.container}>
@@ -193,9 +239,9 @@ export default function RegisterScreen({navigation}) {
                 onFocus={onFocus}
                 onBlur={onBlur}
               />
-              {data.check_textInputChange ? (
+              {/* {data.check_textInputChange ? (
                 <Feather name="check-circle" color="#17e84b" size={20} />
-              ) : null}
+              ) : null} */}
             </View>
             <View style={styles.form_error}>
               {data.isValidUser ? null : (
@@ -203,6 +249,11 @@ export default function RegisterScreen({navigation}) {
                   Tên đăng nhập phải từ 6 ký tự trở lên
                 </Text>
               )}
+              {data.isExistedUser ? (
+                <Text style={styles.form_error_text}>
+                  Tên đăng nhập đã tồn tại
+                </Text>
+              ) : null}
             </View>
             <View
               style={[
@@ -278,6 +329,9 @@ export default function RegisterScreen({navigation}) {
           </View>
           <View style={styles.control}>
             <TouchableOpacity
+              onPress={() =>
+                registerHandler(data.username, data.password, data.confirm)
+              }
               style={[styles.button_wrapper, styles.button_normal]}
               activeOpacit={0.8}>
               <Text style={styles.button}>Đăng ký</Text>

@@ -46,8 +46,9 @@ export default function SchoolDetailsScreen({route}) {
               source={require('../../assets/images/menu.png')}
             />
           </View>
-          {menu.map(item => (
+          {menu.map((item, index) => (
             <TouchableOpacity
+              key={index}
               onPress={() => onClickMenu(item.id)}
               style={styles.menu_item}>
               <Text

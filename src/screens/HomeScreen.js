@@ -13,7 +13,6 @@ import schoolService from '../../services/SchoolService';
 import areaService from '../../services/AreaService';
 
 export default function HomeScreen({navigation}) {
-  const {LogOut} = useContext(AuthContext);
   const [data, setData] = useState([]);
   useEffect(() => {
     const getListRegion = async () => {
@@ -26,6 +25,8 @@ export default function HomeScreen({navigation}) {
     };
 
     getListRegion();
+
+    return () => {};
   }, []);
 
   return (

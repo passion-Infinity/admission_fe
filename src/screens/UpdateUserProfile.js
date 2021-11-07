@@ -1,4 +1,4 @@
-import React, {useContext, useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   StyleSheet,
   View,
@@ -11,70 +11,44 @@ import {
 } from 'react-native';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import Feather from 'react-native-vector-icons/Feather';
-import {AuthContext} from '../components/context';
 import userService from '../../services/UserService';
-import schoolService from '../../services/SchoolService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function LoginScreen({navigation}) {
+export default function UpdateProfileScreen({navigation}) {
   const onPress = () => {
     Keyboard.dismiss();
-    setFocus(false);
+    setFocus1(false);
+    setFocus2(false);
   };
-
   const goBack = () => {
     navigation.goBack();
   };
-
-  // Focus into Textinput
-  const [focus, setFocus] = useState(false);
   const [focus1, setFocus1] = useState(false);
-
-  const onFocus = () => {
-    setFocus(true);
-  };
-
-  const onBlur = () => {
-    setFocus(false);
-  };
-
+  const [focus2, setFocus2] = useState(false);
   const onFocus1 = () => {
     setFocus1(true);
   };
-
   const onBlur1 = () => {
     setFocus1(false);
   };
+  const onFocus2 = () => {
+    setFocus2(true);
+  };
+  const onBlur2 = () => {
+    setFocus2(false);
+  };
 
-  // auth context
-  const {LogIn} = useContext(AuthContext);
-
-  // data to Login
+  // data to Register
   const [data, setData] = useState({
     username: '',
     password: '',
-    check_textInputChange: false,
+    confirm: '',
     sercureTextEntry: true,
-    isValidUser: true,
+    sercureTextEntryConfirm: true,
     isValidPassword: true,
+    isValidCofirmPassword: true,
+    isMatchedPassword: true,
   });
-
-  const textInputChange = val => {
-    if (val.trim().length >= 6) {
-      setData({
-        ...data,
-        username: val,
-        check_textInputChange: true,
-        isValidUser: true,
-      });
-    } else {
-      setData({
-        ...data,
-        username: val,
-        check_textInputChange: false,
-        isValidUser: false,
-      });
-    }
-  };
 
   const handlePassword = val => {
     if (val.trim().length >= 8) {
@@ -92,10 +66,35 @@ export default function LoginScreen({navigation}) {
     }
   };
 
+  const handleConfirmPassword = val => {
+    if (val.trim().length >= 8) {
+      setData({
+        ...data,
+        confirm: val,
+        isValidCofirmPassword: true,
+        isMatchedPassword: val === data.password,
+      });
+    } else {
+      setData({
+        ...data,
+        confirm: val,
+        isValidCofirmPassword: false,
+        isMatchedPassword: true,
+      });
+    }
+  };
+
   const updateSercureTextInput = () => {
     setData({
       ...data,
       sercureTextEntry: !data.sercureTextEntry,
+    });
+  };
+
+  const updateConfirmSercureTextInput = () => {
+    setData({
+      ...data,
+      sercureTextEntryConfirm: !data.sercureTextEntryConfirm,
     });
   };
 
@@ -127,22 +126,62 @@ export default function LoginScreen({navigation}) {
     }
   };
 
-  const loginHandler = async (username, password) => {
-    if (!username || !password || username.length < 6 || password.length < 8) {
-      alert('Thông tin đăng nhập không đúng');
+  const handleValidConfirmPassword = val => {
+    if (val.trim().length >= 8) {
+      setData({
+        ...data,
+        isValidCofirmPassword: true,
+        isMatchedPassword: val === data.password,
+      });
+    } else {
+      setData({
+        ...data,
+        isValidPassword: false,
+        isMatchedPassword: true,
+      });
+    }
+  };
+
+  const updateHandler = async (password, confirm) => {
+    if (!password || !confirm || password.length < 8 || confirm.length < 8) {
+      alert('Thông tin cập nhật không đúng');
       return;
     }
 
-    const response = await userService.Login(username, password);
-    let token = null;
+    if (confirm !== password) {
+      alert('Mặt khẩu xác nhận không đúng');
+      return;
+    }
+
+    const payload = {
+      password,
+    };
+
+    const response = await userService.UpdateUser(user.username, payload);
 
     if (response && response.success) {
-      token = response.token;
-      LogIn(username, token);
+      alert('Cập nhật tài khoản thành công');
     } else {
-      alert('Username or password is not correct');
+      alert('Thông tin cập nhật không đúng');
     }
   };
+
+  const [user, setUser] = useState();
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const username = await AsyncStorage.getItem('username');
+        const userFind = await userService.GetUser(username);
+        if (userFind) {
+          setUser(userFind);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getUser();
+  }, []);
 
   return (
     <TouchableWithoutFeedback onPress={onPress}>
@@ -152,36 +191,26 @@ export default function LoginScreen({navigation}) {
             <FontAwesome5 name="arrow-left" color="#fff" size={20} />
           </TouchableOpacity>
           <View style={styles.header_title}>
-            <Text style={styles.header_title_text}>Đăng nhập</Text>
+            <Text style={styles.header_title_text}>Cập nhật</Text>
             <Text style={styles.header_title_text}>tài khoản của bạn</Text>
           </View>
         </View>
         <View style={styles.body}>
           <View style={styles.form}>
-            <View
-              style={[styles.form_item, focus ? {borderColor: '#bda50d'} : '']}>
+            <View style={[styles.form_item]}>
               <FontAwesome5 name="user" color="#c4c9d1" size={20} />
               <TextInput
                 style={styles.form_item_input}
-                placeholder="Tên đăng nhập"
+                placeholder={user ? user.username : ''}
                 placeholderTextColor="#fff"
                 autoCapitalize="none"
-                onChangeText={val => textInputChange(val)}
-                onEndEditing={e => handleValidUser(e.nativeEvent.text)}
-                onFocus={onFocus}
-                onBlur={onBlur}
+                editable={false}
               />
-              {data.check_textInputChange ? (
+              {/* {data.check_textInputChange ? (
                 <Feather name="check-circle" color="#17e84b" size={20} />
-              ) : null}
+              ) : null} */}
             </View>
-            <View style={styles.form_error}>
-              {data.isValidUser ? null : (
-                <Text style={styles.form_error_text}>
-                  Tên đăng nhập phải từ 6 ký tự trở lên
-                </Text>
-              )}
-            </View>
+            <View style={styles.form_error}></View>
             <View
               style={[
                 styles.form_item,
@@ -190,7 +219,7 @@ export default function LoginScreen({navigation}) {
               <FontAwesome5 name="lock" color="#c4c9d1" size={20} />
               <TextInput
                 style={styles.form_item_input}
-                placeholder="Mặt khẩu"
+                placeholder="Mặt khẩu mới"
                 placeholderTextColor="#fff"
                 autoCapitalize="none"
                 onChangeText={val => handlePassword(val)}
@@ -214,26 +243,52 @@ export default function LoginScreen({navigation}) {
                 </Text>
               )}
             </View>
+            <View
+              style={[
+                styles.form_item,
+                focus2 ? {borderColor: '#bda50d'} : '',
+              ]}>
+              <FontAwesome5 name="lock" color="#c4c9d1" size={20} />
+              <TextInput
+                style={styles.form_item_input}
+                placeholder="Nhập lại mặt khẩu"
+                placeholderTextColor="#fff"
+                autoCapitalize="none"
+                onChangeText={val => handleConfirmPassword(val)}
+                onEndEditing={e =>
+                  handleValidConfirmPassword(e.nativeEvent.text)
+                }
+                onFocus={onFocus2}
+                onBlur={onBlur2}
+                secureTextEntry={data.sercureTextEntryConfirm}
+              />
+              <TouchableOpacity onPress={updateConfirmSercureTextInput}>
+                {data.sercureTextEntryConfirm ? (
+                  <Feather name="eye-off" color="#c4c9d1" size={20} />
+                ) : (
+                  <Feather name="eye" color="#c4c9d1" size={20} />
+                )}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.form_error}>
+              {data.isValidCofirmPassword ? null : (
+                <Text style={styles.form_error_text}>
+                  Mặt khẩu phải từ 8 ký từ trở lên
+                </Text>
+              )}
+              {data.isMatchedPassword ? null : (
+                <Text style={styles.form_error_text}>
+                  Mặt khẩu xác nhận không đúng
+                </Text>
+              )}
+            </View>
           </View>
           <View style={styles.control}>
             <TouchableOpacity
-              onPress={() => loginHandler(data.username, data.password)}
+              onPress={() => updateHandler(data.password, data.confirm)}
               style={[styles.button_wrapper, styles.button_normal]}
               activeOpacit={0.8}>
-              <Text style={styles.button}>Đăng nhập</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button_wrapper, styles.button_google]}
-              activeOpacit={0.8}>
-              <View style={styles.button_image_wrapper}>
-                <Image
-                  style={styles.button_image}
-                  source={require('../../assets/images/google.png')}
-                />
-              </View>
-              <Text style={[styles.button, styles.button_google_text]}>
-                Đăng nhập bằng Google
-              </Text>
+              <Text style={styles.button}>Cập nhật</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -251,7 +306,7 @@ const styles = StyleSheet.create({
   },
   header: {
     width: '100%',
-    height: 300,
+    height: 200,
     justifyContent: 'space-evenly',
     paddingLeft: 10,
   },
